@@ -205,6 +205,7 @@ describe('requiresNameserversFetch per provider', () => {
   // changes this delegation should update the flag here too.
   const expected: Record<string, boolean> = {
     '101domain': true,
+    'above': false,
     'cloudflare': true,
     'dynadot': false,
     'gandi': true,

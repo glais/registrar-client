@@ -163,39 +163,39 @@ are the guaranteed contract; **extended** methods are opt-in per provider.
 **Legend:** ✓ implemented · ✗ not available via the provider's API (throws
 `NotImplementedError`) · a superscript marks a caveat noted below.
 
-| Core method         | CF  | DY  | GA  | GD  | NB  | NC  | NS  | PB  | SP  | NM  | 101 |
-| ------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `testConnection`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `listDomains`       | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `getDomain`         | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `checkAvailability` | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `getPricing`        | ✓   | ✓ᵃ  | ✓   | ✓ᵃ  | ✗ᵇ  | ✓   | ✓   | ✓   | ✗ᵇ  | ✓   | ✓   |
-| `registerDomain`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   |
-| `renewDomain`       | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   |
-| `setAutoRenew`      | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   |
-| `transferIn`        | ✗ᶜ  | ✓   | ✓   | ✓   | ✗ᵈ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   |
-| `updateNameservers` | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `getNameservers`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `lockDomain`        | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   |
-| `unlockDomain`      | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   |
-| `setPrivacy`        | ✓   | ✓   | ✓ᶠ  | ✓ᵍ  | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   |
-| `getContacts`       | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   |
-| `updateContacts`    | ✗ᶜ  | ✓   | ✓   | ✓   | ✗ᵈ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   |
-| `getDnsRecords`     | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `setDnsRecords`     | ✓   | ✓ʰ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ʰ  | ✓   | ✓   |
+| Core method         | CF  | DY  | GA  | GD  | NB  | NC  | NS  | PB  | SP  | NM  | 101 | AB  |
+| ------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `testConnection`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `listDomains`       | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `getDomain`         | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `checkAvailability` | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵖ  |
+| `getPricing`        | ✓   | ✓ᵃ  | ✓   | ✓ᵃ  | ✗ᵇ  | ✓   | ✓   | ✓   | ✗ᵇ  | ✓   | ✓   | ✓   |
+| `registerDomain`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✓ⁿ  |
+| `renewDomain`       | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✓   |
+| `setAutoRenew`      | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✗ˢ  |
+| `transferIn`        | ✗ᶜ  | ✓   | ✓   | ✓   | ✗ᵈ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✓   |
+| `updateNameservers` | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `getNameservers`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `lockDomain`        | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓   |
+| `unlockDomain`      | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓   |
+| `setPrivacy`        | ✓   | ✓   | ✓ᶠ  | ✓ᵍ  | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓   |
+| `getContacts`       | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓ᵒ  |
+| `updateContacts`    | ✗ᶜ  | ✓   | ✓   | ✓   | ✗ᵈ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✗ᵗ  |
+| `getDnsRecords`     | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ʳ  |
+| `setDnsRecords`     | ✓   | ✓ʰ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ʰ  | ✓   | ✓   | ✗ʳ  |
 
-| Extended method       | CF  | DY  | GA  | GD  | NB  | NC  | NS  | PB  | SP  | NM  | 101 |
-| --------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `getAuthCode`         | ✗   | ✓   | ✓   | ✓   | ✓   | ✗ⁱ  | ✗ⁱ  | ✗   | ✓   | ✓   | ✗   |
-| `getDnssec`           | ✗   | ✓   | ✓   | ✗   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗ᵐ  | ✗   |
-| `disableDnssec`       | ✗   | ✓   | ✓   | ✗   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗ᵐ  | ✗   |
-| `getEmailForwarding`  | ✓   | ✓   | ✓   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗   | ✗ᵐ  | ✗   |
-| `setEmailForwarding`  | ✓   | ✓   | ✓   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗   | ✗ᵐ  | ✗   |
-| `getDomainForwarding` | ✓   | ✓ʲ  | ✓ᵏ  | ✓ˡ  | ✗   | ✓   | ✓ʲ  | ✓   | ✗   | ✗ᵐ  | ✓   |
-| `setDomainForwarding` | ✓   | ✓ʲ  | ✓ᵏ  | ✓ˡ  | ✗   | ✓   | ✓ʲ  | ✓   | ✗   | ✗ᵐ  | ✓   |
+| Extended method       | CF  | DY  | GA  | GD  | NB  | NC  | NS  | PB  | SP  | NM  | 101 | AB  |
+| --------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `getAuthCode`         | ✗   | ✓   | ✓   | ✓   | ✓   | ✗ⁱ  | ✗ⁱ  | ✗   | ✓   | ✓   | ✗   | ✓   |
+| `getDnssec`           | ✗   | ✓   | ✓   | ✗   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗ᵐ  | ✗   | ✗   |
+| `disableDnssec`       | ✗   | ✓   | ✓   | ✗   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗ᵐ  | ✗   | ✗   |
+| `getEmailForwarding`  | ✓   | ✓   | ✓   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗   | ✗ᵐ  | ✗   | ✗   |
+| `setEmailForwarding`  | ✓   | ✓   | ✓   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗   | ✗ᵐ  | ✗   | ✗   |
+| `getDomainForwarding` | ✓   | ✓ʲ  | ✓ᵏ  | ✓ˡ  | ✗   | ✓   | ✓ʲ  | ✓   | ✗   | ✗ᵐ  | ✓   | ✗   |
+| `setDomainForwarding` | ✓   | ✓ʲ  | ✓ᵏ  | ✓ˡ  | ✗   | ✓   | ✓ʲ  | ✓   | ✗   | ✗ᵐ  | ✓   | ✗   |
 
 `CF` Cloudflare · `DY` Dynadot · `GA` Gandi · `GD` GoDaddy · `NB` NameBright ·
-`NC` Namecheap · `NS` NameSilo · `PB` Porkbun · `SP` Spaceship · `NM` Name.com · `101` 101domain.
+`NC` Namecheap · `NS` NameSilo · `PB` Porkbun · `SP` Spaceship · `NM` Name.com · `101` 101domain · `AB` Above.com.
 
 101domain API 1.1.0 supports portfolio/search/pricing reads, DNS and nameserver
 writes, and permanent apex URL forwarding. Its unimplemented core methods throw
@@ -235,6 +235,20 @@ not a claim of available API endpoints. See [101domain](docs/registrars/101domai
 - **ˡ** GoDaddy domain forwarding uses the v2 customer-scoped API, so it requires
   a `customerId` (the customer UUID, or a numeric shopper ID the client resolves to
   the UUID via an sso-key-only lookup); the old v1 forwarding route was removed.
+
+- **ⁿ** Above.com registers against the account / per-TLD default contact; inline
+  contacts, `years`, and auto-renew aren't settable at registration — nameservers
+  and privacy are applied as follow-up calls.
+- **ᵒ** Above.com has no per-domain contact read; `getContacts` resolves the
+  domain's contact identifiers against the account contact list and splits the
+  single `name` field (lossy). `updateContacts` (**ᵗ**) has no reassignment
+  endpoint — a contact is assignable only at registration.
+- **ᵖ** Above.com has no availability endpoint; a per-TLD price table is available
+  via `getPricing`.
+- **ʳ** Above.com's DNS API only _creates_ records (`add_dns`) — no read, replace,
+  or delete — so `getDnsRecords` / `setDnsRecords` throw.
+- **ˢ** Above.com exposes auto-renew read-only (`manage_domains`); there is no API
+  to change it.
 
 For the deeper cross-provider notes and per-registrar quirks, see
 [docs/registrars/FEATURES.md](docs/registrars/FEATURES.md).

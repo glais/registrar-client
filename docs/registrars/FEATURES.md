@@ -2,6 +2,7 @@
 
 The design record behind the capability model, plus the per-registrar engineering
 detail, for the providers documented in this folder ([101domain](101domain.md) ·
+[above](above.md) ·
 [cloudflare](cloudflare.md) ·
 [dynadot](dynadot.md) · [gandi](gandi.md) · [godaddy](godaddy.md) ·
 [namecheap](namecheap.md) · [namesilo](namesilo.md) · [porkbun](porkbun.md) ·

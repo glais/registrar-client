@@ -7,6 +7,18 @@ blocked. See `docs/registrars/FEATURES.md` for the full status matrix.
 
 ## Needs live testing (built + unit-tested, not executed)
 
+- [ ] **Above.com** — the entire adapter is built from the documented XML
+      request/response shapes and unit-tested, but **never run against a live
+      account**: Above issues API keys only on request (no self-service) and has
+      **no sandbox**, so every call hits a real account/balance. Verify the reads
+      first (`testConnection` via `balance`, `manage_domains`, `pricing`), then
+      the writes. Specific unknowns: `getContacts` resolves a domain's contact
+      _identifiers_ by scanning `manage_contacts` and matching
+      `contact_identifier`/`contact_alias` — confirm the real responses key that
+      way, and that the single `name` split is acceptable; `registerDomain`'s
+      follow-up nameserver/privacy steps; the `.BE`-style `request_epp`
+      email-only path. `registerDomain`/`renewDomain`/`transferIn` spend real
+      money. See `docs/registrars/above.md`.
 - [ ] `renewDomain` / `transferIn` on **NameSilo**, and `registerDomain` /
       `renewDomain` on **NameBright** — paid/irreversible; built to documented
       shapes. **NameSilo `registerDomain` is now sandbox-verified** on the OTE

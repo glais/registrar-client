@@ -4,6 +4,7 @@ import type {
   RegistrarCredentials,
   RegistrarOptions,
 } from '../types';
+import { AboveRegistrar } from './above';
 import { CloudflareRegistrar } from './cloudflare';
 import { Domain101Registrar } from './domain101';
 import { DynadotRegistrar } from './dynadot';
@@ -19,6 +20,7 @@ import { SpaceshipRegistrar } from './spaceship';
 // the built-in registrar providers, keyed by id
 export const registrars = {
   '101domain': Domain101Registrar,
+  'above': AboveRegistrar,
   'cloudflare': CloudflareRegistrar,
   'dynadot': DynadotRegistrar,
   'gandi': GandiRegistrar,
