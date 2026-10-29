@@ -216,6 +216,7 @@ describe('requiresNameserversFetch per provider', () => {
     'namesilo': false,
     'porkbun': true,
     'spaceship': false,
+    'unstoppable': true,
   };
 
   it('covers every registrar', () => {

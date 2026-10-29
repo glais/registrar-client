@@ -7,6 +7,15 @@ blocked. See `docs/registrars/FEATURES.md` for the full status matrix.
 
 ## Needs live testing (built + unit-tested, not executed)
 
+- [ ] **Unstoppable Domains** — the read+manage adapter (portfolio list/get,
+      availability+pricing, DNS records, nameservers, auto-renew, URL forwarding)
+      is built from the OpenAPI spec and unit-tested, but **never run against a
+      live account** (no sandbox). Things to confirm on a real account:
+      `ud_portfolio_list` field mapping for web3 vs ICANN names, `pricing.amount`
+      cents handling, the `setDnsRecords` remove-all→add round-trip (and MX
+      `"<priority> <host>"` value format), and the `ud_dns_hosting_*` forwarding
+      replace. **Register/renew are intentionally not wired** (cart→checkout,
+      spends money). See `docs/registrars/unstoppable.md`.
 - [ ] **Above.com** — the entire adapter is built from the documented XML
       request/response shapes and unit-tested, but **never run against a live
       account**: Above issues API keys only on request (no self-service) and has

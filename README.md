@@ -43,19 +43,20 @@ npm install @aoxborrow/registrar-client
 
 ## Providers
 
-| id           | Provider   | Auth                       | Sandbox | Notes                                             |
-| ------------ | ---------- | -------------------------- | ------- | ------------------------------------------------- |
-| `101domain`  | 101domain  | Bearer API key             | —       | Portfolio, DNS, nameservers, permanent forwarding |
-| `cloudflare` | Cloudflare | API token + Account ID     | —       | manages existing domains only                     |
-| `dynadot`    | Dynadot    | API key                    | ✓       | `api-sandbox.dynadot.com`; key in query           |
-| `gandi`      | Gandi.net  | API key                    | ✓       | `api.sandbox.gandi.net`                           |
-| `godaddy`    | GoDaddy    | PAT, or key + secret       | ✓       | hybrid v3/v1; sandbox = OTE (v1 only)             |
-| `namebright` | NameBright | client ID + secret         | —       | OAuth2 bearer; production-only                    |
-| `namecheap`  | Namecheap  | username + key + client IP | ✓       | XML API; IP allowlisting required                 |
-| `namecom`    | Name.com   | username + API token       | ✓       | Core v1; separate sandbox host and token          |
-| `namesilo`   | NameSilo   | API key                    | ✓       | JSON/XML API; key sent in query string            |
-| `porkbun`    | Porkbun    | key + secret               | ✓       | sandbox via `pk1_sb_` key; per-domain opt-in      |
-| `spaceship`  | Spaceship  | key + secret               | —       |                                                   |
+| id            | Provider    | Auth                       | Sandbox | Notes                                             |
+| ------------- | ----------- | -------------------------- | ------- | ------------------------------------------------- |
+| `101domain`   | 101domain   | Bearer API key             | —       | Portfolio, DNS, nameservers, permanent forwarding |
+| `cloudflare`  | Cloudflare  | API token + Account ID     | —       | manages existing domains only                     |
+| `dynadot`     | Dynadot     | API key                    | ✓       | `api-sandbox.dynadot.com`; key in query           |
+| `gandi`       | Gandi.net   | API key                    | ✓       | `api.sandbox.gandi.net`                           |
+| `godaddy`     | GoDaddy     | PAT, or key + secret       | ✓       | hybrid v3/v1; sandbox = OTE (v1 only)             |
+| `namebright`  | NameBright  | client ID + secret         | —       | OAuth2 bearer; production-only                    |
+| `namecheap`   | Namecheap   | username + key + client IP | ✓       | XML API; IP allowlisting required                 |
+| `namecom`     | Name.com    | username + API token       | ✓       | Core v1; separate sandbox host and token          |
+| `namesilo`    | NameSilo    | API key                    | ✓       | JSON/XML API; key sent in query string            |
+| `porkbun`     | Porkbun     | key + secret               | ✓       | sandbox via `pk1_sb_` key; per-domain opt-in      |
+| `spaceship`   | Spaceship   | key + secret               | —       |                                                   |
+| `unstoppable` | Unstoppable | API key (`ud_mcp_…`)       | —       | web3 + ICANN; JSON actions API; read + manage     |
 
 Each provider class exposes static discovery metadata — `displayName`,
 `website` (its public domain, e.g. `gandi.net`), `configFields` (the credential
@@ -163,39 +164,39 @@ are the guaranteed contract; **extended** methods are opt-in per provider.
 **Legend:** ✓ implemented · ✗ not available via the provider's API (throws
 `NotImplementedError`) · a superscript marks a caveat noted below.
 
-| Core method         | CF  | DY  | GA  | GD  | NB  | NC  | NS  | PB  | SP  | NM  | 101 | AB  |
-| ------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `testConnection`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `listDomains`       | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `getDomain`         | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `checkAvailability` | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵖ  |
-| `getPricing`        | ✓   | ✓ᵃ  | ✓   | ✓ᵃ  | ✗ᵇ  | ✓   | ✓   | ✓   | ✗ᵇ  | ✓   | ✓   | ✓   |
-| `registerDomain`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✓ⁿ  |
-| `renewDomain`       | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✓   |
-| `setAutoRenew`      | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✗ˢ  |
-| `transferIn`        | ✗ᶜ  | ✓   | ✓   | ✓   | ✗ᵈ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✓   |
-| `updateNameservers` | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `getNameservers`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
-| `lockDomain`        | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓   |
-| `unlockDomain`      | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓   |
-| `setPrivacy`        | ✓   | ✓   | ✓ᶠ  | ✓ᵍ  | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓   |
-| `getContacts`       | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓ᵒ  |
-| `updateContacts`    | ✗ᶜ  | ✓   | ✓   | ✓   | ✗ᵈ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✗ᵗ  |
-| `getDnsRecords`     | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ʳ  |
-| `setDnsRecords`     | ✓   | ✓ʰ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ʰ  | ✓   | ✓   | ✗ʳ  |
+| Core method         | CF  | DY  | GA  | GD  | NB  | NC  | NS  | PB  | SP  | NM  | 101 | AB  | UD  |
+| ------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `testConnection`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `listDomains`       | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `getDomain`         | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `checkAvailability` | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵖ  | ✓   |
+| `getPricing`        | ✓   | ✓ᵃ  | ✓   | ✓ᵃ  | ✗ᵇ  | ✓   | ✓   | ✓   | ✗ᵇ  | ✓   | ✓   | ✓   | ✓ᵃ  |
+| `registerDomain`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✓ⁿ  | ✗ᵘ  |
+| `renewDomain`       | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✓   | ✗ᵘ  |
+| `setAutoRenew`      | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✗ˢ  | ✓   |
+| `transferIn`        | ✗ᶜ  | ✓   | ✓   | ✓   | ✗ᵈ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✓   | ✗ᵛ  |
+| `updateNameservers` | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `getNameservers`    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| `lockDomain`        | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓   | ✗ᵛ  |
+| `unlockDomain`      | ✗ᶜ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓   | ✗ᵛ  |
+| `setPrivacy`        | ✓   | ✓   | ✓ᶠ  | ✓ᵍ  | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓   | ✗ᵛ  |
+| `getContacts`       | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ᵉ  | ✓   | ✓   | ✗   | ✓ᵒ  | ✗ᵛ  |
+| `updateContacts`    | ✗ᶜ  | ✓   | ✓   | ✓   | ✗ᵈ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✗   | ✗ᵗ  | ✗ᵛ  |
+| `getDnsRecords`     | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✗ʳ  | ✓   |
+| `setDnsRecords`     | ✓   | ✓ʰ  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ʰ  | ✓   | ✓   | ✗ʳ  | ✓   |
 
-| Extended method       | CF  | DY  | GA  | GD  | NB  | NC  | NS  | PB  | SP  | NM  | 101 | AB  |
-| --------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `getAuthCode`         | ✗   | ✓   | ✓   | ✓   | ✓   | ✗ⁱ  | ✗ⁱ  | ✗   | ✓   | ✓   | ✗   | ✓   |
-| `getDnssec`           | ✗   | ✓   | ✓   | ✗   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗ᵐ  | ✗   | ✗   |
-| `disableDnssec`       | ✗   | ✓   | ✓   | ✗   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗ᵐ  | ✗   | ✗   |
-| `getEmailForwarding`  | ✓   | ✓   | ✓   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗   | ✗ᵐ  | ✗   | ✗   |
-| `setEmailForwarding`  | ✓   | ✓   | ✓   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗   | ✗ᵐ  | ✗   | ✗   |
-| `getDomainForwarding` | ✓   | ✓ʲ  | ✓ᵏ  | ✓ˡ  | ✗   | ✓   | ✓ʲ  | ✓   | ✗   | ✗ᵐ  | ✓   | ✗   |
-| `setDomainForwarding` | ✓   | ✓ʲ  | ✓ᵏ  | ✓ˡ  | ✗   | ✓   | ✓ʲ  | ✓   | ✗   | ✗ᵐ  | ✓   | ✗   |
+| Extended method       | CF  | DY  | GA  | GD  | NB  | NC  | NS  | PB  | SP  | NM  | 101 | AB  | UD  |
+| --------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `getAuthCode`         | ✗   | ✓   | ✓   | ✓   | ✓   | ✗ⁱ  | ✗ⁱ  | ✗   | ✓   | ✓   | ✗   | ✓   | ✗   |
+| `getDnssec`           | ✗   | ✓   | ✓   | ✗   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗ᵐ  | ✗   | ✗   | ✗   |
+| `disableDnssec`       | ✗   | ✓   | ✓   | ✗   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗ᵐ  | ✗   | ✗   | ✗   |
+| `getEmailForwarding`  | ✓   | ✓   | ✓   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗   | ✗ᵐ  | ✗   | ✗   | ✗   |
+| `setEmailForwarding`  | ✓   | ✓   | ✓   | ✗   | ✗   | ✓   | ✓   | ✗   | ✗   | ✗ᵐ  | ✗   | ✗   | ✗   |
+| `getDomainForwarding` | ✓   | ✓ʲ  | ✓ᵏ  | ✓ˡ  | ✗   | ✓   | ✓ʲ  | ✓   | ✗   | ✗ᵐ  | ✓   | ✗   | ✓   |
+| `setDomainForwarding` | ✓   | ✓ʲ  | ✓ᵏ  | ✓ˡ  | ✗   | ✓   | ✓ʲ  | ✓   | ✗   | ✗ᵐ  | ✓   | ✗   | ✓   |
 
 `CF` Cloudflare · `DY` Dynadot · `GA` Gandi · `GD` GoDaddy · `NB` NameBright ·
-`NC` Namecheap · `NS` NameSilo · `PB` Porkbun · `SP` Spaceship · `NM` Name.com · `101` 101domain · `AB` Above.com.
+`NC` Namecheap · `NS` NameSilo · `PB` Porkbun · `SP` Spaceship · `NM` Name.com · `101` 101domain · `AB` Above.com · `UD` Unstoppable.
 
 101domain API 1.1.0 supports portfolio/search/pricing reads, DNS and nameserver
 writes, and permanent apex URL forwarding. Its unimplemented core methods throw
@@ -249,6 +250,12 @@ not a claim of available API endpoints. See [101domain](docs/registrars/101domai
   or delete — so `getDnsRecords` / `setDnsRecords` throw.
 - **ˢ** Above.com exposes auto-renew read-only (`manage_domains`); there is no API
   to change it.
+
+- **ᵘ** Unstoppable registers/renews through a multi-step cart→checkout flow
+  that spends real money (`ud_cart_*`); it isn't wired into this adapter.
+- **ᵛ** Unstoppable has no transfer-in, transfer-lock, WHOIS-privacy, or
+  per-domain contact API — its portfolio includes web3 NFT domains. (Account-
+  level ICANN contacts exist via `ud_contacts_list` but aren't mapped per domain.)
 
 For the deeper cross-provider notes and per-registrar quirks, see
 [docs/registrars/FEATURES.md](docs/registrars/FEATURES.md).

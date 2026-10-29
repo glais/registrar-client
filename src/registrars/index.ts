@@ -16,6 +16,7 @@ import { NamecomRegistrar } from './namecom';
 import { NameSiloRegistrar } from './namesilo';
 import { PorkbunRegistrar } from './porkbun';
 import { SpaceshipRegistrar } from './spaceship';
+import { UnstoppableRegistrar } from './unstoppable';
 
 // the built-in registrar providers, keyed by id
 export const registrars = {
@@ -31,6 +32,7 @@ export const registrars = {
   'namesilo': NameSiloRegistrar,
   'porkbun': PorkbunRegistrar,
   'spaceship': SpaceshipRegistrar,
+  'unstoppable': UnstoppableRegistrar,
 } satisfies Record<string, RegistrarConstructor>;
 
 // id of a built-in registrar
