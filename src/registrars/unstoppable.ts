@@ -72,9 +72,26 @@ interface UdDnsRecordsResponse {
   pagination?: UdPagination;
 }
 
-interface UdNameserversResponse {
-  nameservers?: string[];
-  isUsingDefaultNameservers?: boolean;
+// one record from ud_domain_get — the richer per-domain view (batched up to 50).
+// Unlike ud_portfolio_list it carries nameservers (even for externally-parked
+// names that 400 on ud_dns_nameservers_list) and the `flags` that reveal a
+// domain that has transferred out of the account.
+interface UdDomainGetRecord {
+  domain?: string;
+  found?: boolean;
+  // flags keyed by name; DNS_TRANSFER_OUT: "ENABLED" means the domain has left
+  // the account (transferred out) even though it still appears in the portfolio.
+  flags?: Record<string, { status?: string } | undefined>;
+  lifecycle?: {
+    purchasedAt?: string | null;
+    expiresAt?: string | null;
+    transferStatus?: string;
+    autoRenewal?: { status?: string } | null;
+  };
+  dns?: { nameservers?: { status?: string; nameservers?: string[] } | null };
+}
+interface UdDomainGetResponse {
+  domains?: UdDomainGetRecord[];
 }
 
 // one hosting/forwarding config from ud_dns_hosting_list
@@ -187,10 +204,11 @@ export class UnstoppableRegistrar extends BaseRegistrar {
    */
   override async listDomains(opts?: ListDomainsOptions): Promise<Domain[]> {
     const { search, ...reqOpts } = opts ?? {};
-    const domains: Domain[] = [];
+    // 1. enumerate the portfolio (ud_portfolio_list gives names, but no
+    //    nameservers and no signal that a name has transferred out).
+    const names: string[] = [];
     const limit = 500; // Unstoppable's max page size
     let offset = 0;
-
     for (;;) {
       const res = await this.call<UdPortfolioResponse>(
         'ud_portfolio_list',
@@ -198,38 +216,77 @@ export class UnstoppableRegistrar extends BaseRegistrar {
         reqOpts
       );
       const page = res.domains ?? [];
-      for (const d of page) domains.push(this.toDomain(d));
+      for (const d of page) if (d.name) names.push(d.name);
       if (!res.pagination?.hasMore || page.length === 0) break;
       offset = res.pagination.nextOffset ?? offset + limit;
+    }
+
+    // 2. ud_domain_get (batched, 50/call) carries nameservers + the flags that
+    //    reveal transferred-out names. Drop those (they've left the account), and
+    //    fold the nameservers in so no per-domain enrichment is needed.
+    const detail = await this.fetchDetails(names, reqOpts);
+    const domains: Domain[] = [];
+    for (const name of names) {
+      const rec = detail.get(normalizeDomain(name));
+      if (isTransferredOut(rec)) continue; // no longer in the account
+      domains.push(this.domainFromGet(rec, name));
     }
     return filterDomains(domains, search);
   }
 
-  /**
-   * No per-domain "get" action, so this filters the portfolio by the exact name.
-   * Throws NotFoundError when it isn't in the account.
-   */
+  /** Full detail via ud_domain_get. Throws NotFoundError when the domain isn't in
+   *  the account (or has transferred out). */
   override async getDomain(domainName: string, opts?: RequestOptions): Promise<Domain> {
     const target = normalizeDomain(domainName);
-    const res = await this.call<UdPortfolioResponse>(
-      'ud_portfolio_list',
-      { searchTerm: target, limit: 50 },
-      opts
-    );
-    const match = (res.domains ?? []).find(d => normalizeDomain(d.name ?? '') === target);
-    if (!match) {
+    const res = await this.call<UdDomainGetResponse>('ud_domain_get', { domains: [target] }, opts);
+    const rec = (res.domains ?? []).find(r => normalizeDomain(r.domain ?? '') === target);
+    if (!rec || rec.found === false || isTransferredOut(rec)) {
       throw new NotFoundError(`Unstoppable: domain '${domainName}' is not in this account`);
     }
-    return this.toDomain(match);
+    return this.domainFromGet(rec, target);
   }
 
+  // getNameservers re-reads ud_domain_get (listDomains already folds in the
+  // nameservers from the same source), so the listing-enrichment fallback gains
+  // nothing — skip it.
+  override readonly requiresNameserversFetch = false;
+
   override async getNameservers(domainName: string, opts?: RequestOptions): Promise<string[]> {
-    const res = await this.call<UdNameserversResponse>(
-      'ud_dns_nameservers_list',
-      { domain: normalizeDomain(domainName) },
-      opts
-    );
-    return res.nameservers ?? [];
+    const target = normalizeDomain(domainName);
+    const res = await this.call<UdDomainGetResponse>('ud_domain_get', { domains: [target] }, opts);
+    const rec = (res.domains ?? []).find(r => normalizeDomain(r.domain ?? '') === target);
+    return nameserversOf(rec);
+  }
+
+  /**
+   * Fetch ud_domain_get detail for many names, batched at the API's 50-per-call
+   * limit with light concurrency (well under the 15 req/s rate limit). Keyed by
+   * normalized domain name.
+   */
+  private async fetchDetails(
+    names: string[],
+    opts?: RequestOptions
+  ): Promise<Map<string, UdDomainGetRecord>> {
+    const batches: string[][] = [];
+    for (let i = 0; i < names.length; i += 50) batches.push(names.slice(i, i + 50));
+    const byName = new Map<string, UdDomainGetRecord>();
+    let next = 0;
+    const worker = async (): Promise<void> => {
+      while (next < batches.length) {
+        const batch = batches[next++];
+        const res = await this.call<UdDomainGetResponse>('ud_domain_get', { domains: batch }, opts);
+        for (const rec of res.domains ?? [])
+          if (rec.domain) byName.set(normalizeDomain(rec.domain), rec);
+      }
+    };
+    // ud_domain_get is slow (~8-10s per call, any batch size) and Unstoppable
+    // throttles it server-side, so a handful of concurrent batches is as fast as
+    // it gets (and stays well under the 15 req/s limit). The whole list therefore
+    // trades a slower sync for complete, dupe-free detail in one pass — no
+    // per-domain nameserver enrichment afterwards.
+    const CONCURRENCY = 5;
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, batches.length) }, worker));
+    return byName;
   }
 
   /** Sets custom (external) nameservers via ud_dns_nameservers_set_custom. */
@@ -574,21 +631,36 @@ export class UnstoppableRegistrar extends BaseRegistrar {
     );
   }
 
-  // map a portfolio entry to the normalized Domain
-  private toDomain(d: UdPortfolioDomain): Domain {
+  // Build a normalized Domain from a ud_domain_get record (falling back to the
+  // bare name when the detail call didn't return one).
+  private domainFromGet(rec: UdDomainGetRecord | undefined, name: string): Domain {
+    const lc = rec?.lifecycle ?? {};
     return createDomain({
-      domainName: d.name,
+      domainName: rec?.domain ?? name,
       registrar: this.name,
-      status: d.transferStatus === 'pending' ? 'pending transfer' : 'ok',
-      createdDate: d.purchasedAt ?? null,
-      expirationDate: d.expiresAt ?? null,
-      renewalDate: d.expiresAt ?? null,
-      autoRenew: d.autoRenewal?.status === 'active',
+      status: lc.transferStatus === 'pending' ? 'pending transfer' : 'ok',
+      createdDate: lc.purchasedAt ?? null,
+      expirationDate: lc.expiresAt ?? null,
+      renewalDate: lc.expiresAt ?? null,
+      autoRenew: lc.autoRenewal?.status === 'active',
       locked: false, // Unstoppable has no transfer lock
       privacy: false, // not exposed
-      nameservers: [], // not in the portfolio list (see getNameservers)
+      nameservers: nameserversOf(rec),
     });
   }
+}
+
+// A domain whose DNS_TRANSFER_OUT flag is ENABLED has transferred out of the
+// account. Unstoppable still returns it in the portfolio list (with
+// transferStatus "none"), so detect it here and drop it.
+function isTransferredOut(rec: UdDomainGetRecord | undefined): boolean {
+  return rec?.flags?.DNS_TRANSFER_OUT?.status === 'ENABLED';
+}
+
+// Nameservers from a ud_domain_get record — present even for externally-parked
+// names that 400 on the dedicated ud_dns_nameservers_list endpoint.
+function nameserversOf(rec: UdDomainGetRecord | undefined): string[] {
+  return rec?.dns?.nameservers?.nameservers ?? [];
 }
 
 // Unstoppable prices are integer cents; convert to major units (or undefined).

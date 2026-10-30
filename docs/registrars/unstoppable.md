@@ -62,6 +62,18 @@ have a null `expiresAt`.
 
 ## Implementation notes
 
+- **Reads go through `ud_domain_get` (batched, 50/call), not the dedicated
+  endpoints.** `ud_portfolio_list` enumerates names but has no nameservers and no
+  transfer-out signal; `ud_dns_nameservers_list` 400s for externally-parked names
+  ("Domain registration is not valid for management"). `ud_domain_get` returns
+  nameservers for every domain plus a `flags` map. So `listDomains` enumerates via
+  the portfolio, then `ud_domain_get`s the names to fold in nameservers and **drop
+  transferred-out domains** (`flags.DNS_TRANSFER_OUT.status === "ENABLED"` — these
+  still appear in the portfolio list with `transferStatus:"none"`). That makes
+  `requiresNameserversFetch` false. `ud_domain_get` is slow and server-throttled
+  (~8-10s/call regardless of batch size), so a large account's list is slow (~70s
+  for 852 domains) but complete in one pass.
+
 - **Prices are integer cents.** `pricing.amount` (and `listing.price`) are in
   cents; divide by 100 for major units. `currency` is alongside.
 - **Records hold multiple values.** A `ud_dns_records_list` record has a

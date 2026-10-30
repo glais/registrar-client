@@ -7,15 +7,19 @@ blocked. See `docs/registrars/FEATURES.md` for the full status matrix.
 
 ## Needs live testing (built + unit-tested, not executed)
 
-- [ ] **Unstoppable Domains** — the read+manage adapter (portfolio list/get,
-      availability+pricing, DNS records, nameservers, auto-renew, URL forwarding)
-      is built from the OpenAPI spec and unit-tested, but **never run against a
-      live account** (no sandbox). Things to confirm on a real account:
-      `ud_portfolio_list` field mapping for web3 vs ICANN names, `pricing.amount`
-      cents handling, the `setDnsRecords` remove-all→add round-trip (and MX
-      `"<priority> <host>"` value format), and the `ud_dns_hosting_*` forwarding
-      replace. **Register/renew are intentionally not wired** (cart→checkout,
-      spends money). See `docs/registrars/unstoppable.md`.
+- [x] **Unstoppable Domains** — **live-verified 2026-10-30** against a real
+      852-domain account. Reads use `ud_domain_get` (batched 50/call): it carries
+      nameservers for every domain (even externally-parked names that 400 on
+      `ud_dns_nameservers_list`) and the `flags.DNS_TRANSFER_OUT: "ENABLED"` that
+      marks a name that has **transferred out** of the account (the portfolio list
+      still returns it with `transferStatus:"none"`). `listDomains` folds in the
+      nameservers and drops transferred-out names (108 of the 852 were stale), so
+      `requiresNameserversFetch` is false. Trade-off: `ud_domain_get` is slow and
+      server-throttled (~8-10s/call, any batch size), so a full list of 852 takes
+      ~70s. Still **unrun**: the write paths (`updateNameservers`,
+      `setDnsRecords`, `setDomainForwarding`, `setAutoRenew`) and register/renew
+      (intentionally not wired — cart→checkout, spends money). See
+      `docs/registrars/unstoppable.md`.
 - [ ] **Above.com** — the entire adapter is built from the documented XML
       request/response shapes and unit-tested, but **never run against a live
       account**: Above issues API keys only on request (no self-service) and has

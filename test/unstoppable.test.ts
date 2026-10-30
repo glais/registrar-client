@@ -43,71 +43,98 @@ describe('Unstoppable Domains provider', () => {
     expect(JSON.stringify(calls[0].body)).not.toContain('ud_mcp_test'); // key is a header, not body
   });
 
-  it('listDomains maps ICANN + web3 entries and paginates by offset', async () => {
+  // ud_domain_get detail keyed by name, used by the read-path tests below
+  const DETAIL: Record<string, unknown> = {
+    'example.com': {
+      domain: 'example.com',
+      found: true,
+      flags: { DNS_TRANSFER_OUT: { status: 'DISABLED' } },
+      lifecycle: {
+        purchasedAt: '2023-01-01T00:00:00Z',
+        expiresAt: '2027-01-01T00:00:00Z',
+        transferStatus: 'none',
+        autoRenewal: { status: 'active' },
+      },
+      dns: { nameservers: { status: 'custom', nameservers: ['ns1.ud.com', 'ns2.ud.com'] } },
+    },
+    'vitalik.crypto': {
+      domain: 'vitalik.crypto',
+      found: true,
+      flags: {},
+      lifecycle: { expiresAt: null, transferStatus: 'none', autoRenewal: null },
+      dns: { nameservers: { nameservers: [] } },
+    },
+    // transferred out to another registrar — still in the portfolio list
+    'gone.com': {
+      domain: 'gone.com',
+      found: true,
+      flags: { DNS_TRANSFER_OUT: { status: 'ENABLED' } },
+      lifecycle: { expiresAt: '2026-01-01T00:00:00Z' },
+      dns: { nameservers: { nameservers: ['ns1.afternic.com'] } },
+    },
+  };
+  const domainGet = (req: RequestConfig) => ({
+    domains: (req.body as { domains: string[] }).domains.map(n => DETAIL[n]).filter(Boolean),
+  });
+
+  it('listDomains folds in nameservers via ud_domain_get, paginates, and drops transferred-out names', async () => {
     const u = ud();
     const page1 = {
-      domains: [
-        {
-          name: 'example.com',
-          extension: 'com',
-          purchasedAt: '2023-01-01T00:00:00Z',
-          expiresAt: '2027-01-01T00:00:00Z',
-          transferStatus: 'none',
-          autoRenewal: { status: 'active' },
-        },
-      ],
+      domains: [{ name: 'example.com' }, { name: 'gone.com' }],
       pagination: { hasMore: true, nextOffset: 500 },
     };
     const page2 = {
-      domains: [
-        {
-          name: 'vitalik.crypto',
-          extension: 'crypto',
-          expiresAt: null,
-          transferStatus: 'none',
-          autoRenewal: null,
-        },
-      ],
+      domains: [{ name: 'vitalik.crypto' }],
       pagination: { hasMore: false, nextOffset: null },
     };
-    const calls = stubHttp(u, (_a, req) =>
-      (req.body as { offset?: number }).offset ? page2 : page1
-    );
+    const calls = stubHttp(u, (action, req) => {
+      if (action === 'ud_portfolio_list')
+        return (req.body as { offset?: number }).offset ? page2 : page1;
+      if (action === 'ud_domain_get') return domainGet(req);
+      return {};
+    });
     const all = await u.listDomains();
-    expect(calls.map(c => (c.body as { offset?: number }).offset)).toEqual([0, 500]);
-    expect(all).toHaveLength(2);
-    expect(all[0]).toMatchObject({
-      domainName: 'example.com',
+    expect(calls.filter(c => c.path?.endsWith('ud_portfolio_list'))).toHaveLength(2);
+    expect(calls.some(c => c.path?.endsWith('ud_domain_get'))).toBe(true);
+    // gone.com (DNS_TRANSFER_OUT: ENABLED) is excluded
+    expect(all.map(d => d.domainName).sort()).toEqual(['example.com', 'vitalik.crypto']);
+    const ex = all.find(d => d.domainName === 'example.com')!;
+    expect(ex).toMatchObject({
       registrar: 'unstoppable',
       autoRenew: true,
       locked: false,
+      nameservers: ['ns1.ud.com', 'ns2.ud.com'],
     });
-    expect(all[0].expirationDate?.toISOString()).toBe('2027-01-01T00:00:00.000Z');
-    // web3 NFT: no expiry, auto-renew off
-    expect(all[1]).toMatchObject({ domainName: 'vitalik.crypto', autoRenew: false });
-    expect(all[1].expirationDate).toBeNull();
+    expect(ex.expirationDate?.toISOString()).toBe('2027-01-01T00:00:00.000Z');
+    const v = all.find(d => d.domainName === 'vitalik.crypto')!;
+    expect(v).toMatchObject({ autoRenew: false });
+    expect(v.expirationDate).toBeNull();
   });
 
-  it('getDomain filters the portfolio and throws NotFound when absent', async () => {
+  it('getDomain uses ud_domain_get; NotFound when absent or transferred out', async () => {
     const u = ud();
-    stubHttp(u, () => ({
-      domains: [{ name: 'example.com', extension: 'com' }],
-      pagination: { hasMore: false },
-    }));
-    expect((await u.getDomain('Example.com')).domainName).toBe('example.com');
+    stubHttp(u, (_a, req) => domainGet(req));
+    const d = await u.getDomain('Example.com');
+    expect(d).toMatchObject({
+      domainName: 'example.com',
+      nameservers: ['ns1.ud.com', 'ns2.ud.com'],
+    });
 
     const u2 = ud();
-    stubHttp(u2, () => ({ domains: [], pagination: { hasMore: false } }));
+    stubHttp(u2, () => ({ domains: [] }));
     await expect(u2.getDomain('missing.com')).rejects.toBeInstanceOf(NotFoundError);
+
+    // transferred out → treated as not in the account
+    const u3 = ud();
+    stubHttp(u3, (_a, req) => domainGet(req));
+    await expect(u3.getDomain('gone.com')).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it('getNameservers reads the nameservers action', async () => {
+  it('getNameservers reads ud_domain_get (works even for parked names)', async () => {
     const u = ud();
-    stubHttp(u, () => ({
-      nameservers: ['ns1.example.net', 'ns2.example.net'],
-      isUsingDefaultNameservers: false,
-    }));
-    expect(await u.getNameservers('example.com')).toEqual(['ns1.example.net', 'ns2.example.net']);
+    const calls = stubHttp(u, (_a, req) => domainGet(req));
+    expect(await u.getNameservers('example.com')).toEqual(['ns1.ud.com', 'ns2.ud.com']);
+    expect(calls[0].path).toBe('/mcp/v1/actions/ud_domain_get');
   });
 
   it('updateNameservers posts the custom-nameservers payload', async () => {
